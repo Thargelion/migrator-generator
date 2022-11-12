@@ -3,42 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"migrator-generator/command"
+	"migrator-generator/menu"
 	"os/exec"
-	"strings"
 )
 
+const DefaultMenu = true
 const DefaultProject = "Users"
+const DefaultAction = "migrations add"
 const DefaultVersion = "0_1_0"
 const DefaultSolution = "Digidoc"
 
-func buildMigrationName(project string, version string) string {
-	return strings.ToLower(project) + strings.ToLower(version)
-}
-
-func main() {
-	project := flag.String("project", DefaultProject, "Project Name")
-	version := flag.String("version", DefaultVersion, "Project Version")
-	solution := flag.String("solution", DefaultSolution, "Solution Name")
-
-	flag.Parse()
-	command := fmt.Sprintf("dotnet ef migrations add %s "+
-		"--context %sContext "+
-		"--project %s.Internal/%s.Internal.csproj "+
-		"--startup-project %s",
-		buildMigrationName(*project, *version),
-		*project,
-		*project,
-		*project,
-		*solution,
-	)
-	fmt.Printf("Comando a ejecutar:\n %s \n", command)
-	cmd := exec.Command(command)
-	err := cmd.Run()
-	if err != nil {
-		print(err.Error())
-		return
-	}
-
+func printSuccess() {
 	fmt.Printf("" +
 		"⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⠄⣀⣠⣤⣤⣤⣤⣤⣄⣀⡀⠄⠄⠄⠄⠄⠄⠄⠄\n" +
 		"⠄⠄⠄⠄⠄⠄⠄⢀⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣤⡀⠄⠄⠄⠄⠄\n" +
@@ -55,6 +31,49 @@ func main() {
 		"⠄⠄⠄⠄⠻⣦⡙⠿⣧⠙⢷⠙⠻⠿⢿⡿⠿⠿⠛⠋⠉⠄⠂⠘⠁⠞⠄⠄⠄\n" +
 		"⠄⠄⠄⠄⠄⠈⠙⠑⣠⣤⣴⡖⠄⠿⣋⣉⣉⡁⠄⢾⣦⠄⠄⠄⠄⠄⠄⠄⠄\n" +
 		"⠄⠄⠄⠄⠄⠄⠄⠄⠛⠛⠋⠁⣠⣾⣿⣿⣿⣿⡆⠄⣿⠆⠄⠄⠄⠄⠄⠄⠄\n" +
-		"⠄⠄⠄⠄Migración realizada!⠄⠄⠄⠄",
+		"⠄⠄⠄⠄Acción realizada!⠄⠄⠄⠄",
 	)
+}
+
+func executeMigrationBuilder(executionString string) error {
+	fmt.Printf("Comando a ejecutar:\n %s \n", executionString)
+	cmd := exec.Command(executionString)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func main() {
+	var comm command.ExecutionBuilder
+	var err error
+	enableMenu := flag.Bool("enableMenu", DefaultMenu, "Use Menu")
+	action := flag.String("action", DefaultAction, "Project Name")
+	project := flag.String("project", DefaultProject, "Project Name")
+	version := flag.String("version", DefaultVersion, "Project Version")
+	solution := flag.String("solution", DefaultSolution, "Solution Name")
+
+	flag.Parse()
+
+	if *enableMenu == true {
+		comm, err = menu.PrintAndGet()
+	} else {
+		comm = command.NewCommand(*action, *version, *project, *solution)
+	}
+
+	if err != nil {
+		print(err.Error())
+		return
+	}
+
+	execErr := executeMigrationBuilder(comm.BuildExecutionString())
+
+	if execErr != nil {
+		print(execErr.Error())
+		return
+	}
+
+	printSuccess()
 }
