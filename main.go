@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"migrator-generator/command"
 	"migrator-generator/menu"
+	"os"
 	"os/exec"
+	"strings"
 )
 
 const DefaultMenu = true
@@ -13,6 +16,23 @@ const DefaultProject = "Users"
 const DefaultAction = "migrations add"
 const DefaultVersion = "0_1_0"
 const DefaultSolution = "Digidoc"
+
+func endProgram() {
+	fmt.Printf("Write exit to exit\n")
+	for {
+		consoleReader := bufio.NewReader(os.Stdin)
+		fmt.Print(">")
+
+		input, _ := consoleReader.ReadString('\n')
+
+		input = strings.ToLower(input)
+
+		if strings.HasPrefix(input, "exit") {
+			fmt.Println("Good bye!")
+			os.Exit(0)
+		}
+	}
+}
 
 func printSuccess() {
 	fmt.Printf("" +
@@ -33,6 +53,7 @@ func printSuccess() {
 		"⠄⠄⠄⠄⠄⠄⠄⠄⠛⠛⠋⠁⣠⣾⣿⣿⣿⣿⡆⠄⣿⠆⠄⠄⠄⠄⠄⠄⠄\n" +
 		"⠄⠄⠄⠄Acción realizada!⠄⠄⠄⠄",
 	)
+	endProgram()
 }
 
 func executeMigrationBuilder(executionString string) error {
@@ -65,15 +86,16 @@ func main() {
 
 	if err != nil {
 		print(err.Error())
+		endProgram()
 		return
 	}
 
 	execErr := executeMigrationBuilder(comm.BuildExecutionString())
 
 	if execErr != nil {
-		print(execErr.Error())
-		return
+		fmt.Printf(execErr.Error() + "\n")
+		endProgram()
+	} else {
+		printSuccess()
 	}
-
-	printSuccess()
 }
